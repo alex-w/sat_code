@@ -955,7 +955,7 @@ static void remove_redundant_desig( char *name, const char *desig)
 
 static char *gzgets_trimmed( gzFile ifile, char *buff, const size_t buff_len)
 {
-   char *rval = gzgets( ifile, buff, buff_len);
+   char *rval = gzgets( ifile, buff, (int)buff_len);
 
    if( rval)
       {
