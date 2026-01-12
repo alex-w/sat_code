@@ -145,6 +145,17 @@ typedef struct
 #define EARTH_MINOR_AXIS    6356752.
 #define is_power_of_two( X)   (!((X) & ((X) - 1)))
 
+/* By default,  Sat_ID checks for possible matches with both artificial
+objects (its main use) and some natural irregular satellites of the gas
+giants.  Use the '-n0' command line option to identify only artificial
+objects,  or '-n1' to identify only the natural irregular objects. */
+
+#define IDENTIFY_ALL             2
+#define IDENTIFY_ARTSATS         0
+#define IDENTIFY_NATSATS         1
+
+static int identify_filter = IDENTIFY_ALL;
+
 /* For testing purposes,  I sometimes want _only_ "my" TLEs (not the
    'classified' or Space-Watch TLEs) to be used.  This is invoked with -s. */
 static bool my_tles_only = false;
@@ -1348,11 +1359,17 @@ static int add_tle_to_obs( object_t *objects, const size_t n_objects,
          {
          int n_read = sscanf( line2 + 6, "%d %s", &search_norad, search_intl);
          size_t i;
+         bool is_natural;
 
          assert( 2 == n_read);
          for( i = strlen( search_intl); i < 8; i++)
             search_intl[i] = ' ';
          search_intl[8] = '\0';
+         is_natural = isdigit( search_intl[7]);
+         if( identify_filter == IDENTIFY_ARTSATS && is_natural)
+            look_for_tles = false;
+         if( identify_filter == IDENTIFY_NATSATS && !is_natural)
+            look_for_tles = false;
          }
       else if( !memcmp( line2, "# ID off", 8))
          {
@@ -1553,6 +1570,18 @@ int main( const int argc, const char **argv)
                break;
             case 'd':
                _target_desig = param;
+               break;
+            case 'f':
+               if( *param == 'n')
+                  identify_filter = IDENTIFY_NATSATS;
+               else if( *param == 'a')
+                  identify_filter = IDENTIFY_ARTSATS;
+               else
+                  {
+                  fprintf( stderr, "Bad command line switch '%s'\n", argv[i]);
+                  fprintf( stderr, "Use -fa to show only artsats,  -fn to show only natsats\n");
+                  return( -1);
+                  }
                break;
             case 'i':
                intl_desig = param;
