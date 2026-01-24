@@ -448,8 +448,10 @@ static OBSERVATION *get_observations_from_file( FILE *ifile, size_t *n_found,
    void *ades_context = init_ades2mpc( );
    char buff[400];
    size_t count = 0, n_allocated = 0, n_offsets = 0, i;
+   size_t n_obs_without_loc = 0;
    offset_t *offsets = NULL;
    int n_errors_found = 0;
+   const clock_t t0 = clock( );
 
    assert( ades_context);
    memset( &obs, 0, sizeof( OBSERVATION));
@@ -503,7 +505,24 @@ static OBSERVATION *get_observations_from_file( FILE *ifile, size_t *n_found,
                                (n_allocated + 1) * sizeof( OBSERVATION));
                }
             rval[count] = obs;
+            if( !rval[count].observer_loc[0] && !rval[count].observer_loc[1]
+                                             && !rval[count].observer_loc[2])
+               {
+               const OBSERVATION temp_swap = rval[count];   /* put obs w/out positions */
+                                                            /* at the start of array   */
+               rval[count] = rval[n_obs_without_loc];
+               rval[n_obs_without_loc] = temp_swap;
+               n_obs_without_loc++;
+               }
             count++;
+            if( count % 500000 == 0)
+               {
+               const clock_t dt = clock( ) - t0;
+
+               if( dt)
+                  fprintf( stderr, "%ld obs (%.0lf obs/second) \r",
+                        count, (double)count * (double)CLOCKS_PER_SEC / (double)dt);
+               }
             }
          }
       else if( !strncmp( buff, "COM verbose ", 12))
@@ -525,7 +544,7 @@ static OBSERVATION *get_observations_from_file( FILE *ifile, size_t *n_found,
       {
       size_t j = 0;
 
-      while( j < count && !offset_matches_obs( offsets + i, rval + j))
+      while( j < n_obs_without_loc && !offset_matches_obs( offsets + i, rval + j))
          j++;
       if( j == count)
          {
