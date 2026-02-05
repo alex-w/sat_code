@@ -37,6 +37,8 @@ typedef struct
 
 static int verbose = 0;
 
+static double ra_offset = 0., dec_offset = 0.;
+
 static char *gzgets_trimmed( char *buff, const int buffsize, gzFile ifile)
 {
    char *rval = gzgets( ifile, buff, buffsize);
@@ -291,6 +293,8 @@ static int show_ephems_from( const char *path_to_tles, const ephem_t *e,
                               buff, pos[0], pos[1], pos[2],
                               vel[0] / 60., vel[1] / 60., vel[2] / 60.);
                   }
+               ra += ra_offset;
+               dec += dec_offset;
                put_ra_in_buff( ra_buff, ra);
                put_dec_in_buff( dec_buff, dec);
                ra_buff[10] = dec_buff[9] = '\0';
@@ -581,6 +585,15 @@ int dummy_main( const int argc, const char **argv)
                break;
             case 'n':
                e.n_steps = atoi( arg);
+               break;
+            case 'O':
+               if( sscanf( arg, "%lf,%lf", &ra_offset, &dec_offset) == 2)
+                  {
+                  printf( "Offsetting by %f degrees in RA,  %f degrees in dec\n",
+                                 ra_offset, dec_offset);
+                  ra_offset *= PI / 180.;
+                  dec_offset *= PI / 180.;
+                  }
                break;
             case 'r':
                round_to_nearest_step = false;
