@@ -254,8 +254,11 @@ static int show_ephems_from( const char *path_to_tles, const ephem_t *e,
                               tle.norad_number,
                               (atoi( tle.intl_desig) > 57000) ? "19" : "20",
                               tle.intl_desig, tle.intl_desig + 2);
+                  tptr = line0;
+                  if( *tptr == '0' && tptr[1] == ' ')
+                     tptr += 2;    /* actually a '3LE' with name prefaced by '0 ' */
                   snprintf( _header, sizeof( _header),
-                          "%s\n%s", line0, (is_geocentric ? geo_header_text : header_text));
+                          "%s\n%s", tptr, (is_geocentric ? geo_header_text : header_text));
                   if( show_separate_motions)
                      strcat( _header, "    RA \"/sec  dec");
                   if( motion_units == 60)
